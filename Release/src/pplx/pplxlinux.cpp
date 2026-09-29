@@ -35,7 +35,7 @@ _PPLXIMP void YieldExecution() { std::this_thread::yield(); }
 
 _PPLXIMP void linux_scheduler::schedule(TaskProc_t proc, void* param)
 {
-    crossplat::threadpool::shared_instance().service().post(boost::bind(proc, param));
+    boost::asio::post(crossplat::threadpool::shared_instance().service(), boost::bind(proc, param));
 }
 
 } // namespace details

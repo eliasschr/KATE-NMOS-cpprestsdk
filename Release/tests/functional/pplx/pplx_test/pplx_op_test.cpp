@@ -57,7 +57,7 @@ class pplx_dflt_scheduler : public pplx::scheduler_interface
     virtual void schedule(pplx::TaskProc_t proc, void* param)
     {
         pplx::details::atomic_increment(s_flag);
-        m_pool->service().post([=]() -> void { proc(param); });
+        boost::asio::post(m_pool->service(), [=]() -> void { proc(param); });
     }
 
 public:

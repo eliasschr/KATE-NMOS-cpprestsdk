@@ -6,8 +6,8 @@
 
 #if !defined(CPPREST_EXCLUDE_WEBSOCKETS) || !defined(_WIN32)
 #include "pplx/threadpool.h"
-#include <boost/asio/detail/thread.hpp>
 #include <new>
+#include <thread>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -37,7 +37,7 @@ static void abort_if_no_jvm()
 
 struct threadpool_impl final : crossplat::threadpool
 {
-    threadpool_impl(size_t n) : crossplat::threadpool(n), m_work(m_service)
+    threadpool_impl(size_t n) : crossplat::threadpool(n), m_work(boost::asio::make_work_guard(m_service))
     {
         for (size_t i = 0; i < n; i++)
             add_thread();
@@ -61,7 +61,7 @@ private:
     void add_thread()
     {
         m_threads.push_back(
-            std::unique_ptr<boost::asio::detail::thread>(new boost::asio::detail::thread([&] { thread_start(this); })));
+            std::unique_ptr<std::thread>(new std::thread([this] { thread_start(this); })));
     }
 
 #if defined(__ANDROID__)
@@ -83,8 +83,8 @@ private:
         return arg;
     }
 
-    std::vector<std::unique_ptr<boost::asio::detail::thread>> m_threads;
-    boost::asio::io_service::work m_work;
+    std::vector<std::unique_ptr<std::thread>> m_threads;
+    boost::asio::executor_work_guard<boost::asio::io_context::executor_type> m_work;
 };
 
 #if defined(_WIN32)
@@ -108,13 +108,9 @@ struct shared_threadpool
 
     ~shared_threadpool()
     {
-        // if linked into a DLL, the threadpool shared instance will be
-        // destroyed at DLL_PROCESS_DETACH, at which stage joining threads
-        // causes deadlock, hence this dance
-        bool terminate_threads = boost::asio::detail::thread::terminate_threads();
-        boost::asio::detail::thread::set_terminate_threads(true);
+        // Use only public C++/Asio shutdown APIs. The former private-Asio
+        // workaround for the Windows loader lock requires Windows validation.
         get_shared().~threadpool_impl();
-        boost::asio::detail::thread::set_terminate_threads(terminate_threads);
     }
 };
 

@@ -95,8 +95,8 @@ bool verify_cert_chain_platform_specific(boost::asio::ssl::verify_context& verif
 #if defined(_WIN32)
     if (verify_result)
     {
-        boost::asio::ssl::rfc2818_verification rfc2818(hostName);
-        verify_result = rfc2818(verify_result, verifyCtx);
+        boost::asio::ssl::host_name_verification hostname_verification(hostName);
+        verify_result = hostname_verification(verify_result, verifyCtx);
     }
 #endif
     return verify_result;
