@@ -176,7 +176,7 @@ SUITE(client_construction)
 #if !defined(_WIN32) && !defined(__cplusplus_winrt) || defined(CPPREST_FORCE_HTTP_CLIENT_ASIO)
 
     // Verify that the callback of sslcontext is called for HTTPS
-    TEST_FIXTURE(uri_address, ssl_context_callback_https)
+    TEST_FIXTURE(uri_address, ssl_context_callback_https, "Requires", "Internet")
     {
         http_client_config config;
         bool called = false;
@@ -197,7 +197,7 @@ SUITE(client_construction)
     }
 
     // Verify that the callback of sslcontext is not called for HTTP
-    TEST_FIXTURE(uri_address, ssl_context_callback_http)
+    TEST_FIXTURE(uri_address, ssl_context_callback_http, "Requires", "Internet")
     {
         http_client_config config;
         bool called = false;

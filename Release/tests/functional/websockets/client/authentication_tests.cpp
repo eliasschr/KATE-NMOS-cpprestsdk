@@ -93,7 +93,7 @@ SUITE(authentication_tests)
         return false;
     }
 
-    TEST(ssl_test)
+    TEST(ssl_test, "Requires", "Internet")
     {
         websocket_client client;
         std::string body_str("hello");
@@ -148,11 +148,11 @@ SUITE(authentication_tests)
         }
     }
 
-    TEST(self_signed_cert) { handshake_error_test_impl(U("wss://self-signed.badssl.com/")); }
+    TEST(self_signed_cert, "Requires", "Internet") { handshake_error_test_impl(U("wss://self-signed.badssl.com/")); }
 
-    TEST(hostname_mismatch) { handshake_error_test_impl(U("wss://wrong.host.badssl.com/")); }
+    TEST(hostname_mismatch, "Requires", "Internet") { handshake_error_test_impl(U("wss://wrong.host.badssl.com/")); }
 
-    TEST(cert_expired) { handshake_error_test_impl(U("wss://expired.badssl.com/")); }
+    TEST(cert_expired, "Requires", "Internet") { handshake_error_test_impl(U("wss://expired.badssl.com/")); }
 
 } // SUITE(authentication_tests)
 

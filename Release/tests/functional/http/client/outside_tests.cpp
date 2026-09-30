@@ -41,7 +41,7 @@ namespace client
 {
 SUITE(outside_tests)
 {
-    TEST_FIXTURE(uri_address, outside_cnn_dot_com)
+    TEST_FIXTURE(uri_address, outside_cnn_dot_com, "Requires", "Internet")
     {
         handle_timeout([] {
             // http://www.cnn.com redirects users from countries outside of the US to the "http://edition.cnn.com/" drop
@@ -60,7 +60,7 @@ SUITE(outside_tests)
         });
     }
 
-    TEST_FIXTURE(uri_address, outside_wikipedia_compressed_http_response)
+    TEST_FIXTURE(uri_address, outside_wikipedia_compressed_http_response, "Requires", "Internet")
     {
         if (web::http::compression::builtin::supported() == false)
         {
@@ -86,7 +86,7 @@ SUITE(outside_tests)
         VERIFY_ARE_EQUAL(encoding, U("gzip"));
     }
 
-    TEST_FIXTURE(uri_address, outside_google_dot_com)
+    TEST_FIXTURE(uri_address, outside_google_dot_com, "Requires", "Internet")
     {
         // Use code.google.com instead of www.google.com, which redirects
         http_client client(U("http://code.google.com"));
@@ -98,7 +98,7 @@ SUITE(outside_tests)
         }
     }
 
-    TEST_FIXTURE(uri_address, multiple_https_requests)
+    TEST_FIXTURE(uri_address, multiple_https_requests, "Requires", "Internet")
     {
         handle_timeout([&] {
             // Use code.google.com instead of www.google.com, which redirects
@@ -115,7 +115,7 @@ SUITE(outside_tests)
     }
 
 #if (defined(_MSC_VER) && (_MSC_VER >= 1900)) && !CPPREST_FORCE_PPLX
-    TEST_FIXTURE(uri_address, multiple_https_requests_sync_scheduler)
+    TEST_FIXTURE(uri_address, multiple_https_requests_sync_scheduler, "Requires", "Internet")
     {
         struct sync_scheduler : public scheduler_interface
         {
@@ -148,7 +148,7 @@ SUITE(outside_tests)
     }
 #endif
 
-    TEST_FIXTURE(uri_address, reading_google_stream)
+    TEST_FIXTURE(uri_address, reading_google_stream, "Requires", "Internet")
     {
         handle_timeout([&] {
             // Use code.google.com instead of www.google.com, which redirects
@@ -170,7 +170,7 @@ SUITE(outside_tests)
         });
     }
 
-    TEST_FIXTURE(uri_address, no_transfer_encoding_content_length)
+    TEST_FIXTURE(uri_address, no_transfer_encoding_content_length, "Requires", "Internet")
     {
         handle_timeout([] {
             http_client client(U("http://ws.audioscrobbler.com/2.0/") U(
@@ -218,16 +218,16 @@ SUITE(outside_tests)
     }
 #endif // !defined(__cplusplus_winrt)
 
-    TEST(server_selfsigned_cert) { test_failed_ssl_cert(U("https://self-signed.badssl.com/")); }
+    TEST(server_selfsigned_cert, "Requires", "Internet") { test_failed_ssl_cert(U("https://self-signed.badssl.com/")); }
 
 #if !defined(__cplusplus_winrt)
-    TEST(server_selfsigned_cert_ignored) { test_ignored_ssl_cert(U("https://self-signed.badssl.com/")); }
+    TEST(server_selfsigned_cert_ignored, "Requires", "Internet") { test_ignored_ssl_cert(U("https://self-signed.badssl.com/")); }
 #endif // !defined(__cplusplus_winrt)
 
-    TEST(server_hostname_mismatch) { test_failed_ssl_cert(U("https://wrong.host.badssl.com/")); }
+    TEST(server_hostname_mismatch, "Requires", "Internet") { test_failed_ssl_cert(U("https://wrong.host.badssl.com/")); }
 
 #if !defined(__cplusplus_winrt) && !defined(CPPREST_FORCE_HTTP_CLIENT_WINHTTPPAL)
-    TEST(server_hostname_host_override)
+    TEST(server_hostname_host_override, "Requires", "Internet")
     {
         handle_timeout([] {
             http_client client(U("https://wrong.host.badssl.com/"));
@@ -238,9 +238,9 @@ SUITE(outside_tests)
         });
     }
 
-    TEST(server_hostname_mismatch_ignored) { test_ignored_ssl_cert(U("https://wrong.host.badssl.com/")); }
+    TEST(server_hostname_mismatch_ignored, "Requires", "Internet") { test_ignored_ssl_cert(U("https://wrong.host.badssl.com/")); }
 
-    TEST(server_hostname_host_override_after_upgrade)
+    TEST(server_hostname_host_override_after_upgrade, "Requires", "Internet")
     {
         http_client client(U("http://198.35.26.96/"));
         http_request req(methods::GET);
@@ -250,29 +250,45 @@ SUITE(outside_tests)
     }
 #endif // !defined(__cplusplus_winrt) && !defined(CPPREST_FORCE_HTTP_CLIENT_WINHTTPPAL)
 
-    TEST(server_cert_expired) { test_failed_ssl_cert(U("https://expired.badssl.com/")); }
+    TEST(server_cert_expired, "Requires", "Internet") { test_failed_ssl_cert(U("https://expired.badssl.com/")); }
 
 #if !defined(__cplusplus_winrt)
-    TEST(server_cert_expired_ignored) { test_ignored_ssl_cert(U("https://expired.badssl.com/")); }
+    TEST(server_cert_expired_ignored, "Requires", "Internet") { test_ignored_ssl_cert(U("https://expired.badssl.com/")); }
 #endif // !defined(__cplusplus_winrt)
 
-    TEST(server_cert_revoked, "Ignore:Android", "229", "Ignore:Apple", "229", "Ignore:Linux", "229")
+    TEST(server_cert_revoked,
+         "Ignore:Android",
+         "229",
+         "Ignore:Apple",
+         "229",
+         "Ignore:Linux",
+         "229",
+         "Requires",
+         "Internet")
     {
         test_failed_ssl_cert(U("https://revoked.badssl.com/"));
     }
 
 #if !defined(__cplusplus_winrt)
-    TEST(server_cert_revoked_ignored) { test_ignored_ssl_cert(U("https://revoked.badssl.com/")); }
+    TEST(server_cert_revoked_ignored, "Requires", "Internet") { test_ignored_ssl_cert(U("https://revoked.badssl.com/")); }
 #endif // !defined(__cplusplus_winrt)
 
-    TEST(server_cert_untrusted) { test_failed_ssl_cert(U("https://untrusted-root.badssl.com/")); }
+    TEST(server_cert_untrusted, "Requires", "Internet") { test_failed_ssl_cert(U("https://untrusted-root.badssl.com/")); }
 
 #if !defined(__cplusplus_winrt)
-    TEST(server_cert_untrusted_ignored) { test_ignored_ssl_cert(U("https://untrusted-root.badssl.com/")); }
+    TEST(server_cert_untrusted_ignored, "Requires", "Internet") { test_ignored_ssl_cert(U("https://untrusted-root.badssl.com/")); }
 #endif // !defined(__cplusplus_winrt)
 
 #if !defined(__cplusplus_winrt)
-    TEST(ignore_server_cert_invalid, "Ignore:Android", "229", "Ignore:Apple", "229", "Ignore:Linux", "229")
+    TEST(ignore_server_cert_invalid,
+         "Ignore:Android",
+         "229",
+         "Ignore:Apple",
+         "229",
+         "Ignore:Linux",
+         "229",
+         "Requires",
+         "Internet")
     {
         handle_timeout([] {
             http_client_config config;

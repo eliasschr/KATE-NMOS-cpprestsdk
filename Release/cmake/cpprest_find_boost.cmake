@@ -54,7 +54,7 @@ function(cpprest_find_boost)
   add_library(cpprestsdk_boost_internal INTERFACE)
   # FindBoost continually breaks imported targets whenever boost updates.
   if(1)
-    target_include_directories(cpprestsdk_boost_internal INTERFACE "$<BUILD_INTERFACE:${Boost_INCLUDE_DIR}>")
+    target_include_directories(cpprestsdk_boost_internal SYSTEM INTERFACE "$<BUILD_INTERFACE:${Boost_INCLUDE_DIR}>")
     set(_prev)
     set(_libs)
     foreach(_lib ${Boost_LIBRARIES})

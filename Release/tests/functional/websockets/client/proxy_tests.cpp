@@ -42,7 +42,7 @@ SUITE(proxy_tests)
 
 #ifndef __cplusplus_winrt
     // Can't specify a proxy with WinRT implementation.
-    TEST_FIXTURE(uri_address, proxy_with_credentials, "Ignore:Android", "390")
+    TEST_FIXTURE(uri_address, proxy_with_credentials, "Ignore:Android", "390", "Requires", "Internet")
     {
         web::web_proxy proxy(U("http://netproxy.redmond.corp.microsoft.com"));
         web::credentials cred(U("artur"), U("fred")); // relax, this is not my real password

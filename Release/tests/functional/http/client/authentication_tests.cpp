@@ -636,7 +636,14 @@ SUITE(authentication_tests)
 #endif // _WIN32
 
     // Fix for 522831 AV after failed authentication attempt
-    TEST_FIXTURE(uri_address, failed_authentication_attempt, "Ignore:Linux", "89", "Ignore:Apple", "89")
+    TEST_FIXTURE(uri_address,
+                 failed_authentication_attempt,
+                 "Ignore:Linux",
+                 "89",
+                 "Ignore:Apple",
+                 "89",
+                 "Requires",
+                 "Internet")
     {
         handle_timeout([] {
             http_client_config config;
@@ -675,9 +682,9 @@ SUITE(authentication_tests)
         VERIFY_ARE_EQUAL(return_code, response.status_code());
     }
 
-    TEST(auth_no_data) { auth_test_impl(false); }
+    TEST(auth_no_data, "Requires", "Internet") { auth_test_impl(false); }
 
-    TEST(unsuccessful_auth_with_basic_cred) { auth_test_impl(true); }
+    TEST(unsuccessful_auth_with_basic_cred, "Requires", "Internet") { auth_test_impl(true); }
 
     TEST_FIXTURE(uri_address, set_user_options_asio_http)
     {
@@ -695,7 +702,7 @@ SUITE(authentication_tests)
         VERIFY_ARE_EQUAL(200, response.status_code());
     }
 
-    TEST_FIXTURE(uri_address, set_user_options_asio_https)
+    TEST_FIXTURE(uri_address, set_user_options_asio_https, "Requires", "Internet")
     {
         handle_timeout([] {
             http_client_config config;

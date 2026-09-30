@@ -160,7 +160,7 @@ SUITE(redirect_tests)
         }
     }
 
-    TEST(does_not_follow_https_to_http_by_default)
+    TEST(does_not_follow_https_to_http_by_default, "Requires", "Internet")
     {
         handle_timeout([] {
             http_client_config config;
@@ -171,7 +171,7 @@ SUITE(redirect_tests)
         });
     }
 
-    TEST(can_follow_https_to_http)
+    TEST(can_follow_https_to_http, "Requires", "Internet")
     {
         handle_timeout([] {
             http_client_config config;
