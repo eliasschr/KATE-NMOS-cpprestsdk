@@ -1,0 +1,90 @@
+name: Build and test
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Ubuntu GCC
+            os: ubuntu-latest
+            cxx: g++
+          - name: Ubuntu Clang
+            os: ubuntu-latest
+            cxx: clang++
+          - name: macOS AppleClang
+            os: macos-latest
+            cxx: clang++
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Checkout maintained WebSocket++
+        uses: actions/checkout@v7
+        with:
+          repository: eliasschr/KATE-NMOS-websocketpp
+          ref: boost-1.91-support
+          path: deps/websocketpp
+
+      - name: Install Ubuntu dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes cmake ninja-build clang libboost-all-dev libssl-dev zlib1g-dev
+
+      - name: Install macOS dependencies
+        if: runner.os == 'macOS'
+        run: brew install boost openssl@3 zlib ninja
+
+      - name: Configure
+        shell: bash
+        run: |
+          cmake_args=(
+            -S "$GITHUB_WORKSPACE"
+            -B "$GITHUB_WORKSPACE/build"
+            -G Ninja
+            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_CXX_COMPILER="${{ matrix.cxx }}"
+            -DCMAKE_CXX_STANDARD=17
+            -DBUILD_TESTS=ON
+            -DBUILD_SAMPLES=ON
+            -DBUILD_SHARED_LIBS=ON
+            -DWEBSOCKETPP_INCLUDE_DIR="$GITHUB_WORKSPACE/deps/websocketpp"
+          )
+          if [[ "$RUNNER_OS" == macOS ]]; then
+            cmake_args+=(
+              -DBOOST_ROOT="$(brew --prefix boost)"
+              -DOPENSSL_ROOT_DIR="$(brew --prefix openssl@3)"
+              -DCMAKE_PREFIX_PATH="$(brew --prefix boost);$(brew --prefix openssl@3);$(brew --prefix zlib)"
+            )
+          fi
+          cmake "${cmake_args[@]}"
+
+      - name: Verify maintained WebSocket++ is selected
+        shell: bash
+        run: |
+          expected="$GITHUB_WORKSPACE/deps/websocketpp"
+          actual="$(sed -n 's|^WEBSOCKETPP_INCLUDE_DIR:PATH=||p' build/CMakeCache.txt)"
+          test "$actual" = "$expected"
+          test "$actual" != "$GITHUB_WORKSPACE/Release/libs/websocketpp"
+          test -f "$actual/websocketpp/client.hpp"
+          printf 'Using external WebSocket++ headers: %s\n' "$actual"
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: List CTest tests
+        run: ctest --test-dir build/Release -N
+
+      - name: Run CTest serially
+        run: ctest --test-dir build/Release --output-on-failure --parallel 1

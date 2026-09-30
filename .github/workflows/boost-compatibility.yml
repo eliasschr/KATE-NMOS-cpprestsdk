@@ -1,0 +1,102 @@
+name: Boost 1.91 compatibility
+
+on:
+  schedule:
+    - cron: '23 4 * * 1'
+  workflow_dispatch:
+  push:
+    paths:
+      - 'CMakeLists.txt'
+      - 'Release/CMakeLists.txt'
+      - 'Release/cmake/**'
+      - 'Release/src/**'
+      - 'Release/tests/**'
+      - '.github/workflows/boost-compatibility.yml'
+  pull_request:
+    paths:
+      - 'CMakeLists.txt'
+      - 'Release/CMakeLists.txt'
+      - 'Release/cmake/**'
+      - 'Release/src/**'
+      - 'Release/tests/**'
+      - '.github/workflows/boost-compatibility.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  boost-1-91:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Checkout maintained WebSocket++
+        uses: actions/checkout@v7
+        with:
+          repository: eliasschr/KATE-NMOS-websocketpp
+          ref: boost-1.91-support
+          path: deps/websocketpp
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes build-essential cmake ninja-build libssl-dev zlib1g-dev curl bzip2
+
+      - name: Build and install Boost 1.91.0
+        shell: bash
+        run: |
+          boost_archive="$RUNNER_TEMP/boost_1_91_0.tar.bz2"
+          boost_source="$RUNNER_TEMP/boost_1_91_0"
+          boost_prefix="$RUNNER_TEMP/boost-1.91"
+          curl --fail --location --retry 3 --output "$boost_archive" \
+            https://archives.boost.io/release/1.91.0/source/boost_1_91_0.tar.bz2
+          printf '%s  %s\n' \
+            de5e6b0e4913395c6bdfa90537febd9028ea4c0735d2cdb0cd9b45d5f51264f5 \
+            "$boost_archive" | sha256sum --check --status
+          tar --extract --bzip2 --file "$boost_archive" --directory "$RUNNER_TEMP"
+          cd "$boost_source"
+          ./bootstrap.sh --prefix="$boost_prefix"
+          ./b2 --with-random --with-thread --with-filesystem --with-chrono --with-atomic \
+            --with-date_time --with-regex link=shared threading=multi variant=release \
+            install -j"$(nproc)"
+          echo "LD_LIBRARY_PATH=$boost_prefix/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" >> "$GITHUB_ENV"
+
+      - name: Configure against isolated Boost 1.91.0
+        shell: bash
+        run: |
+          boost_prefix="$RUNNER_TEMP/boost-1.91"
+          cmake -S "$GITHUB_WORKSPACE" -B "$GITHUB_WORKSPACE/build" -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_STANDARD=17 \
+            -DBUILD_TESTS=ON \
+            -DBUILD_SAMPLES=ON \
+            -DBUILD_SHARED_LIBS=ON \
+            -DWEBSOCKETPP_INCLUDE_DIR="$GITHUB_WORKSPACE/deps/websocketpp" \
+            -DBOOST_ROOT="$boost_prefix" \
+            -DBOOST_LIBRARYDIR="$boost_prefix/lib" \
+            -DBoost_NO_SYSTEM_PATHS=ON \
+            -DBoost_NO_BOOST_CMAKE=ON
+
+      - name: Verify isolated Boost and maintained WebSocket++
+        shell: bash
+        run: |
+          boost_prefix="$RUNNER_TEMP/boost-1.91"
+          websocketpp_expected="$GITHUB_WORKSPACE/deps/websocketpp"
+          boost_include="$(sed -n 's|^Boost_INCLUDE_DIR:PATH=||p' build/CMakeCache.txt)"
+          websocketpp_actual="$(sed -n 's|^WEBSOCKETPP_INCLUDE_DIR:PATH=||p' build/CMakeCache.txt)"
+          test "$boost_include" = "$boost_prefix/include"
+          test "$websocketpp_actual" = "$websocketpp_expected"
+          test "$websocketpp_actual" != "$GITHUB_WORKSPACE/Release/libs/websocketpp"
+          test -f "$websocketpp_actual/websocketpp/client.hpp"
+          grep -q '#define BOOST_VERSION 109100' "$boost_include/boost/version.hpp"
+          printf 'Using Boost: %s\nUsing WebSocket++: %s\n' "$boost_include" "$websocketpp_actual"
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: List CTest tests
+        run: ctest --test-dir build/Release -N
+
+      - name: Run CTest serially
+        run: ctest --test-dir build/Release --output-on-failure --parallel 1
