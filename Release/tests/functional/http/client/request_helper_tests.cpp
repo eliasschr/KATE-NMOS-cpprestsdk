@@ -34,6 +34,24 @@ namespace client
 {
 SUITE(request_helper_tests)
 {
+    TEST(chunked_encoding_reserves_size_t_hex_width)
+    {
+        const size_t overhead = web::http::details::chunked_encoding::additional_encoding_space;
+        std::vector<uint8_t> data(overhead + 1);
+        data[web::http::details::chunked_encoding::data_offset] = 'x';
+
+        const size_t offset = web::http::details::chunked_encoding::add_chunked_delimiters(data.data(), data.size(), 1);
+
+        VERIFY_ARE_EQUAL(sizeof(size_t) * 2 + 4, overhead);
+        VERIFY_ARE_EQUAL(sizeof(size_t) * 2 - 1, offset);
+        VERIFY_ARE_EQUAL('1', data[offset]);
+        VERIFY_ARE_EQUAL('\r', data[offset + 1]);
+        VERIFY_ARE_EQUAL('\n', data[offset + 2]);
+        VERIFY_ARE_EQUAL('x', data[offset + 3]);
+        VERIFY_ARE_EQUAL('\r', data[offset + 4]);
+        VERIFY_ARE_EQUAL('\n', data[offset + 5]);
+    }
+
     TEST_FIXTURE(uri_address, do_not_fail_on_content_encoding_when_not_requested)
     {
         test_http_server::scoped_server scoped(m_uri);

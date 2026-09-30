@@ -27,15 +27,15 @@ namespace details
 namespace chunked_encoding
 {
 // Transfer-Encoding: chunked support
-static const size_t additional_encoding_space = 12;
+static const size_t additional_encoding_space = sizeof(size_t) * 2 + 4;
 static const size_t data_offset = additional_encoding_space - 2;
 
 // Add the data necessary for properly sending data with transfer-encoding: chunked.
 //
-// There are up to 12 additional bytes needed for each chunk:
+// There are up to sizeof(size_t) * 2 + 4 additional bytes needed for each chunk:
 //
 // The last chunk requires 5 bytes, and is fixed.
-// All other chunks require up to 8 bytes for the length, and four for the two CRLF
+// All other chunks require up to sizeof(size_t) * 2 bytes for the length, and four for the two CRLF
 // delimiters.
 //
 _ASYNCRTIMP size_t __cdecl add_chunked_delimiters(_Out_writes_(buffer_size) uint8_t* data,

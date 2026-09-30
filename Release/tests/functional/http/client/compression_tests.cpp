@@ -1237,13 +1237,16 @@ SUITE(compression_tests)
                                                         cmp.data(), total, got);
                                                 size_t offset2 =
                                                     web::http::details::chunked_encoding::add_chunked_delimiters(
-                                                        cmp.data() + total - 7,
+                                                        cmp.data() + total -
+                                                            (web::http::details::chunked_encoding::additional_encoding_space -
+                                                             5),
                                                         web::http::details::chunked_encoding::additional_encoding_space,
                                                         0);
                                                 _ASSERTE(
-                                                    offset2 == 7 &&
+                                                    offset2 ==
+                                                        web::http::details::chunked_encoding::additional_encoding_space - 5 &&
                                                     web::http::details::chunked_encoding::additional_encoding_space -
-                                                            7 ==
+                                                            offset2 ==
                                                         5);
                                                 memcpy(cmp.data() + web::http::details::chunked_encoding::data_offset -
                                                            2,

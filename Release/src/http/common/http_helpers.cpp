@@ -75,28 +75,29 @@ size_t chunked_encoding::add_chunked_delimiters(_Out_writes_(buffer_size) uint8_
 
     if (bytes_read == 0)
     {
-        offset = 7;
-        data[7] = '0';
-        data[8] = '\r';
-        data[9] = '\n'; // The end of the size.
-        data[10] = '\r';
-        data[11] = '\n'; // The end of the message.
+        offset = http::details::chunked_encoding::additional_encoding_space - 5;
+        data[offset] = '0';
+        data[offset + 1] = '\r';
+        data[offset + 2] = '\n'; // The end of the size.
+        data[offset + 3] = '\r';
+        data[offset + 4] = '\n'; // The end of the message.
     }
     else
     {
-        char buffer[9];
+        constexpr size_t chunk_size_width = sizeof(size_t) * 2;
+        char buffer[chunk_size_width + 1];
 #ifdef _WIN32
-        sprintf_s(buffer, sizeof(buffer), "%8IX", bytes_read);
+        sprintf_s(buffer, sizeof(buffer), "%*IX", static_cast<int>(chunk_size_width), bytes_read);
 #else
-        snprintf(buffer, sizeof(buffer), "%8zX", bytes_read);
+        snprintf(buffer, sizeof(buffer), "%*zX", static_cast<int>(chunk_size_width), bytes_read);
 #endif
-        memcpy(&data[0], buffer, 8);
+        memcpy(&data[0], buffer, chunk_size_width);
         while (data[offset] == ' ')
             ++offset;
-        data[8] = '\r';
-        data[9] = '\n'; // The end of the size.
-        data[10 + bytes_read] = '\r';
-        data[11 + bytes_read] = '\n'; // The end of the chunk.
+        data[chunk_size_width] = '\r';
+        data[chunk_size_width + 1] = '\n'; // The end of the size.
+        data[http::details::chunked_encoding::data_offset + bytes_read] = '\r';
+        data[http::details::chunked_encoding::data_offset + bytes_read + 1] = '\n'; // The end of the chunk.
     }
 
     return offset;
